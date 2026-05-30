@@ -1,0 +1,16 @@
+# Ignorar configurações locais com chaves e senhas reais
+api/config.php
+
+# Ignorar a pasta do Composer com bibliotecas (se existir)
+vendor/
+
+# Ignorar o executável do Composer (já que ele é baixado)
+composer.phar
+
+# Ignorar arquivos temporários do SO
+.DS_Store
+Thumbs.db
+
+# Ignorar logs de erro
+error_log
+*.log

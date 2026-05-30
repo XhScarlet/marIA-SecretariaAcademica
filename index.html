@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secretaria Digital - FATEC ZS</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+    <div class="page-wrapper">
+
+        <div class="fatec-logo-top">
+            <img src="avatar/logo_fatec1.png" alt="Logo FATEC Zona Sul">
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div class="lang-selector" style="margin: 0; padding: 5px 10px; background: rgba(0,0,0,0.2);">
+                    <button class="lang-btn active" data-lang="pt-BR" title="Português" style="padding: 4px 8px; font-size: 12px;">🇧🇷</button>
+                    <button class="lang-btn" data-lang="en-US" title="English" style="padding: 4px 8px; font-size: 12px;">🇺🇸</button>
+                    <button class="lang-btn" data-lang="es-ES" title="Español" style="padding: 4px 8px; font-size: 12px;">🇪🇸</button>
+                </div>
+                <a class="admin-link" href="validar.php">Validador de documento</a>
+                <a class="admin-link" href="api/login.php">Painel da Mari</a>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="avatar"></div>
+                <div class="header-info">
+                    <h2>Mari - Secretaria Digital</h2>
+                    <p>Online • FATEC Zona Sul</p>
+                </div>
+                <button id="toggleVoice" class="voice-btn" title="Ativar/Desativar Voz">🔊</button>
+            </div>
+
+            <div class="chat-box" id="chatBox">
+                <div class="message msg-mari" id="msgBoasVindas">
+                    Oi, colega! Sou a Mari, assistente da secretaria. Digite seu RA e me diga como posso ajudar hoje!
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <input type="text" id="userInput" placeholder="Digite sua mensagem aqui...">
+                
+                <input type="file" id="fileInput" style="display: none;" accept=".pdf,.png,.jpg,.jpeg">
+                <button id="attachBtn" title="Anexar Comprovante" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 10px;">📎</button>
+                
+                <button id="micBtn" class="mic-btn" title="Segure para falar">🎙️</button>
+                <button id="sendBtn">➤</button>
+            </div>
+        </div>
+
+        <div class="mari-full-body">
+            <img src="avatar/marisemfundo1.png" alt="Mari, Assistente Virtual">
+        </div>
+
+    </div>
+    <div vw class="enabled">
+        <div vw-access-button class="active"></div>
+        <div vw-plugin-wrapper>
+            <div class="vw-plugin-top-wrapper"></div>
+        </div>
+    </div>
+    <!-- <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+    <script>
+        new window.VLibras.Widget('https://vlibras.gov.br/app');
+    </script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    <script src="js/chat.js"></script>
+</body>
+</html>
