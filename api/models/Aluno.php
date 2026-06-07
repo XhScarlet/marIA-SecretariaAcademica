@@ -7,9 +7,9 @@ class Aluno {
     }
 
     public function listar($busca = '') {
-        $sql = "SELECT * FROM alunos WHERE nome LIKE :busca OR ra LIKE :busca ORDER BY nome ASC";
+        $sql = "SELECT * FROM alunos WHERE nome LIKE ? OR ra LIKE ? ORDER BY nome ASC";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['busca' => "%$busca%"]);
+        $stmt->execute(["%$busca%", "%$busca%"]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

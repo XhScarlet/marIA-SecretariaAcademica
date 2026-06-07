@@ -54,7 +54,7 @@ CREATE TABLE usuarios_secretaria (
 ) ENGINE=InnoDB;
 
 -- Insert tabela: Usuários Secretaria
-INSERT INTO usuarios_secretaria (id, nome, usuario, senha)
+INSERT INTO usuarios_secretaria (id, nome, usuario, senha, criado_em, assinatura_img)
 VALUES 
 ('9ead217d-a5cf-498b-9cf6-37b8a347aee2', 'Gabriela Cardoso dos Santos', 'admin', '$2y$10$wTnTVDnbUKdZAAQf7j1l0.ixp8esOspMZIQsHFMZa.sIEkUmGMnqm', '2026-05-12 16:44:29', 'assinatura_admin.png');
 

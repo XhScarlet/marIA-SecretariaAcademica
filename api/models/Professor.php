@@ -7,9 +7,9 @@ class Professor {
     }
 
     public function listar($busca = '') {
-        $sql = "SELECT * FROM professores_disciplinas WHERE nome_materia LIKE :busca OR professor LIKE :busca ORDER BY nome_materia ASC";
+        $sql = "SELECT * FROM professores_disciplinas WHERE nome_materia LIKE ? OR professor LIKE ? ORDER BY nome_materia ASC";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['busca' => "%$busca%"]);
+        $stmt->execute(["%$busca%", "%$busca%"]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

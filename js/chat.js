@@ -13,7 +13,35 @@ let chatContexto = []; // Array global para memória
 let arquivoPendente = null; // Guarda o nome do arquivo subido
 let idiomaAtual = 'pt-BR'; // Idioma padrão global
 
+// --- DARK MODE LOGIC ---
+const body = document.body;
+const savedTheme = localStorage.getItem('theme');
+const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+// Aplica o tema logo no início
+if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+    body.classList.add('dark-mode');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Configura o botão de tema
+    const toggleThemeBtn = document.getElementById('toggleTheme');
+    if (body.classList.contains('dark-mode')) {
+        toggleThemeBtn.innerHTML = '<i class="ph ph-sun"></i>';
+    } else {
+        toggleThemeBtn.innerHTML = '<i class="ph ph-moon"></i>';
+    }
+    toggleThemeBtn.addEventListener('click', () => {
+        body.classList.toggle('dark-mode');
+        if (body.classList.contains('dark-mode')) {
+            toggleThemeBtn.innerHTML = '<i class="ph ph-sun"></i>';
+            localStorage.setItem('theme', 'dark');
+        } else {
+            toggleThemeBtn.innerHTML = '<i class="ph ph-moon"></i>';
+            localStorage.setItem('theme', 'light');
+        }
+    });
+
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             // Remove ativo de todos e coloca no clicado
@@ -112,7 +140,7 @@ const toggleVoiceBtn = document.getElementById('toggleVoice');
 // Alterna o estado da voz ao clicar no ícone
 toggleVoiceBtn.addEventListener('click', () => {
     vozAtiva = !vozAtiva;
-    toggleVoiceBtn.textContent = vozAtiva ? '🔊' : '🔇';
+    toggleVoiceBtn.innerHTML = vozAtiva ? '<i class="ph ph-speaker-high"></i>' : '<i class="ph ph-speaker-slash"></i>';
     toggleVoiceBtn.classList.toggle('muted', !vozAtiva);
     console.log('Som:', vozAtiva ? 'ATIVO' : 'MUTADO'); // Debug
 
@@ -195,12 +223,13 @@ function falarResposta(texto) {
     const vozFemininaPremium = (v) => /Francisca|Thalita|Zira|Jenny|Aria|Michelle|Hazel|Helena|Laura|Sabina|Elvira|Monica/i.test(v.name);
 
     if (idiomaAtual === 'pt-BR') {
-        // ORDEM DE PREFERÊNCIA DE VOZES FEMININAS BR
+        // ORDEM DE PREFERÊNCIA DE VOZES FEMININAS BR (FORÇA A FRANCISCA)
         vozSelecionada =
-            vozes.find(v => v.lang === 'pt-BR' && vozFemininaPremium(v)) ||
-            vozes.find(v => v.name === 'Google português do Brasil') ||
-            vozes.find(v => v.lang === 'pt-BR' && !vozMasculina(v)) ||
-            vozes.find(v => v.lang.startsWith('pt'));
+            vozes.find(v => /Francisca/i.test(v.name)) || // 1ª PRIORIDADE ABSOLUTA: Força a Francisca
+            vozes.find(v => v.lang.replace('_', '-').toLowerCase() === 'pt-br' && vozFemininaPremium(v)) ||
+            vozes.find(v => v.name.includes('Google português do Brasil')) ||
+            vozes.find(v => v.lang.replace('_', '-').toLowerCase() === 'pt-br' && !vozMasculina(v)) ||
+            vozes.find(v => v.lang.toLowerCase().startsWith('pt'));
     } else {
         // 3. FILTRA A VOZ CORRETA PARA O IDIOMA ATUAL (en-US, es-ES)
         const prefixoIdioma = idiomaAtual.split('-')[0].toLowerCase();
@@ -224,6 +253,34 @@ function falarResposta(texto) {
     expressao.rate = idiomaAtual === 'pt-BR' ? 1.1 : 1.0; 
     expressao.pitch = 1.1; // Ajuste para soar um pouco mais jovem/feminino caso a voz seja neutra
 
+    // CONTROLE DE VÍDEO DA MARI (Lip Sync Visual)
+    const mariStatic = document.getElementById('mariStatic');
+    const mariVideo = document.getElementById('mariVideo');
+
+    expressao.onstart = function() {
+        if (mariStatic && mariVideo) {
+            mariStatic.style.opacity = '0';
+            mariVideo.style.opacity = '1';
+            mariVideo.play().catch(e => console.log('Autoplay bloqueado:', e));
+        }
+    };
+
+    expressao.onend = function() {
+        if (mariStatic && mariVideo) {
+            mariVideo.pause();
+            mariVideo.style.opacity = '0';
+            mariStatic.style.opacity = '1';
+        }
+    };
+
+    expressao.onerror = function() {
+        if (mariStatic && mariVideo) {
+            mariVideo.pause();
+            mariVideo.style.opacity = '0';
+            mariStatic.style.opacity = '1';
+        }
+    };
+
     sintetizador.speak(expressao);
 }
 
@@ -244,6 +301,8 @@ if (SpeechRecognition) {
     let gravando = false;
     let mousePressionado = false; // Nova flag para controle total
     let timerPressao = null;
+    let micAtivo = false; // Flag para saber se o mic realmente abriu
+    let pararPendente = false; // Flag para abortar se soltar o botão antes do mic abrir
     const TEMPO_PRESS = 150;
 
     function emitirBip(frequencia, duracao) {
@@ -267,6 +326,7 @@ if (SpeechRecognition) {
         mousePressionado = true;
         timerPressao = setTimeout(() => {
             gravando = true;
+            pararPendente = false;
             emitirBip(660, 50);
             try {
                 recognition.start();
@@ -281,10 +341,25 @@ if (SpeechRecognition) {
         }
         
         if (mousePressionado && gravando) {
-            emitirBip(440, 50);
-            try {
-                recognition.stop(); // Aqui ele processa o fim real
-            } catch(err) {}
+            if (micAtivo) {
+                emitirBip(440, 50);
+                try {
+                    // O stop() no modo continuous espera o fim da frase. O abort() corta o mic na hora!
+                    recognition.abort(); 
+                } catch(err) {}
+            } else {
+                // Soltou o botão, mas o microfone ainda nem tinha ligado (Race Condition)
+                pararPendente = true;
+            }
+            
+            // UI Update imediato para não dar a impressão de estar gravando
+            btnMic.style.transform = 'scale(1)';
+            btnMic.style.backgroundColor = '';
+            if(userInput.value.trim() !== '') {
+                userInput.placeholder = 'Enviando...';
+            } else {
+                userInput.placeholder = 'Digite sua mensagem aqui...';
+            }
         }
         
         mousePressionado = false;
@@ -293,24 +368,58 @@ if (SpeechRecognition) {
     document.addEventListener('mousedown', aoPresionar);
     document.addEventListener('mouseup',   aoSoltar);
     window.addEventListener('mouseup', aoSoltar);
+    
+    // Tratamento massivo de fallbacks para Touch e Telas com Stylus/Caneta
     document.addEventListener('touchstart', aoPresionar, { passive: true });
     document.addEventListener('touchend',   aoSoltar,    { passive: true });
+    document.addEventListener('touchcancel', aoSoltar,   { passive: true });
+    
+    // API Moderna de Ponteiros (cobre mouse, touch e canetas em telas do Windows/Surface)
+    document.addEventListener('pointerup', aoSoltar);
+    document.addEventListener('pointercancel', aoSoltar);
+    document.addEventListener('mouseleave', aoSoltar);
+
+    let transcricaoFinal = '';
 
     recognition.onstart = () => {
+        micAtivo = true;
+        
+        // Se o usuário soltou o botão ANTES do evento onstart disparar
+        if (pararPendente || !mousePressionado) {
+            try {
+                recognition.abort();
+            } catch(e) {}
+            return;
+        }
+
         btnMic.style.transform = 'scale(1.2)';
         btnMic.style.backgroundColor = '#ff4444';
         userInput.placeholder = '🎙️ Pode falar, estou ouvindo...';
+        transcricaoFinal = ''; // Reseta sempre que iniciar uma nova gravação
     };
 
     recognition.onresult = (event) => {
-        let transcricaoCompleta = '';
+        let transcricaoIntermediaria = '';
+        
+        // Varre as palavras que a IA capturou
         for (let i = event.resultIndex; i < event.results.length; i++) {
-            transcricaoCompleta += event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                // Palavra confirmada
+                transcricaoFinal += event.results[i][0].transcript;
+            } else {
+                // Palavra que ela ainda está "pensando" se entendeu direito
+                transcricaoIntermediaria += event.results[i][0].transcript;
+            }
         }
-        userInput.value = transcricaoCompleta;
+        
+        // Joga o texto imediatamente no campo de digitação pro aluno LER o que a Mari está ouvindo
+        userInput.value = transcricaoFinal + transcricaoIntermediaria;
     };
 
     recognition.onend = () => {
+        micAtivo = false;
+        pararPendente = false;
+        
         // Se parou por erro ou silêncio, mas o botão continua apertado...
         if (mousePressionado) {
             setTimeout(() => {
@@ -330,6 +439,9 @@ if (SpeechRecognition) {
         if (userInput.value.trim()) {
             sendMessage();
         }
+        
+        // Limpa para a próxima frase
+        transcricaoFinal = '';
     };
 
     recognition.onerror = (event) => {
@@ -382,7 +494,7 @@ async function sendMessage() {
     const loadingDiv = document.createElement('div');
     loadingDiv.id = loadingId;
     loadingDiv.classList.add('message', 'msg-mari');
-    loadingDiv.textContent = 'Digitando...';
+    loadingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
     chatBox.appendChild(loadingDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -420,11 +532,34 @@ async function sendMessage() {
             for (let i = 0; i < mensagensParaExibir.length; i++) {
                 let frase = mensagensParaExibir[i];
 
+                // Remove qualquer tag [DETALHES: ...] que a IA mandou fora da hora
+                frase = frase.replace(/\[DETALHES:.*?\]/gi, '').trim();
+                if (!frase) continue; // Se sobrou só vazio, pula a mensagem
+
                 // Se a frase for muito curta (ex: "1." ou "Sim"),
                 // junta com a próxima para evitar pausas estranhas
                 if (frase.length < 5 && i < mensagensParaExibir.length - 1) {
                     frase = frase + " " + mensagensParaExibir[i + 1];
+                    frase = frase.replace(/\[DETALHES:.*?\]/gi, '').trim();
                     i++; // Pula a próxima já que juntamos
+                }
+
+                // Se for a partir da segunda mensagem, cria um delay artificial de 5 segundos simulando "digitando..."
+                if (i > 0) {
+                    const typingId = 'typing-delay-' + Date.now();
+                    const typingDiv = document.createElement('div');
+                    typingDiv.id = typingId;
+                    typingDiv.classList.add('message', 'msg-mari');
+                    typingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+                    chatBox.appendChild(typingDiv);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                    // Espera 5 segundos simulando digitação
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+
+                    // Tira as bolinhas da tela
+                    const divToRemove = document.getElementById(typingId);
+                    if (divToRemove) divToRemove.remove();
                 }
 
                 // 1. Mostra na tela

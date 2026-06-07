@@ -2,9 +2,7 @@
 session_start();
 include 'config.php';
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
-} catch (PDOException $e) { die("Erro na conexão: " . $e->getMessage()); }
+
 
 if (isset($_POST['login'])) {
     $usuarioDigitado = $_POST['user'];
@@ -21,7 +19,7 @@ if (isset($_POST['login'])) {
         $_SESSION['admin_nome'] = $usuarioBD['nome'];
         $_SESSION['admin_logado'] = true;
         
-        header('Location: controllers/admin_protocolo.php');
+        header('Location: controllers/dashboard.php');
         exit;
     } else {
         $erro = "Usuário ou senha incorretos, colega!";

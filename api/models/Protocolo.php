@@ -9,10 +9,10 @@ class Protocolo {
     public function listar($busca = '') {
         $sql = "SELECT p.*, a.nome FROM protocolos p 
                 JOIN alunos a ON p.ra_aluno = a.ra 
-                WHERE p.id_protocolo LIKE :busca OR p.ra_aluno LIKE :busca 
+                WHERE p.id_protocolo LIKE ? OR p.ra_aluno LIKE ? 
                 ORDER BY p.data_abertura DESC";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['busca' => "%$busca%"]);
+        $stmt->execute(["%$busca%", "%$busca%"]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

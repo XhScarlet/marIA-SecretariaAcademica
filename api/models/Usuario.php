@@ -8,10 +8,10 @@ class Usuario {
 
     public function listar($busca = '') {
         $sql = "SELECT id, nome, usuario, criado_em FROM usuarios_secretaria 
-                WHERE nome LIKE :busca OR usuario LIKE :busca 
+                WHERE nome LIKE ? OR usuario LIKE ? 
                 ORDER BY nome ASC";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['busca' => "%$busca%"]);
+        $stmt->execute(["%$busca%", "%$busca%"]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

@@ -5,10 +5,7 @@ if (!isset($_SESSION['admin_logado'])) { header('Location: ../login.php'); exit;
 include '../config.php';
 require_once '../models/Usuario.php';
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) { die("Erro na conexão: " . $e->getMessage()); }
+
 
 $usuarioModel = new Usuario($pdo);
 

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mari - Chat Widget</title>
     <link rel="stylesheet" href="index.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         /* Sobrescreve estilos globais para o modo Widget (Iframe) */
         body {
@@ -52,10 +53,10 @@
         <div class="chat-header">
             <div class="avatar"></div>
             <div class="header-info">
-                <h2>Mari - FATEC</h2>
-                <p>Online agora</p>
+                <h2>Mari - Secretaria Digital</h2>
+                <p>Online • FATEC Zona Sul</p>
             </div>
-            <button id="toggleVoice" class="voice-btn" title="Ativar/Desativar Voz">🔊</button>
+            <button id="toggleVoice" class="voice-btn" title="Ativar/Desativar Voz"><i class="ph ph-speaker-high"></i></button>
         </div>
 
         <div class="chat-box" id="chatBox">
@@ -68,10 +69,10 @@
             <input type="text" id="userInput" placeholder="Digite sua mensagem aqui...">
             
             <input type="file" id="fileInput" style="display: none;" accept=".pdf,.png,.jpg,.jpeg">
-            <button id="attachBtn" title="Anexar Comprovante" style="background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 10px;">📎</button>
+            <button id="attachBtn" title="Anexar Comprovante" style="background: none; border: none; font-size: 24px; cursor: pointer; margin-right: 10px; color: #555;"><i class="ph ph-paperclip"></i></button>
             
-            <button id="micBtn" class="mic-btn" title="Segure para falar">🎙️</button>
-            <button id="sendBtn">➤</button>
+            <button id="micBtn" class="mic-btn" title="Segure para falar"><i class="ph ph-microphone"></i></button>
+            <button id="sendBtn"><i class="ph-fill ph-paper-plane-right"></i></button>
         </div>
     </div>
 

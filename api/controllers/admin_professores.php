@@ -5,9 +5,7 @@ if (!isset($_SESSION['admin_logado'])) { header('Location: ../login.php'); exit;
 include '../config.php';
 require_once '../models/Professor.php';
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
-} catch (PDOException $e) { die("Erro na conexão: " . $e->getMessage()); }
+
 
 $professorModel = new Professor($pdo);
 
