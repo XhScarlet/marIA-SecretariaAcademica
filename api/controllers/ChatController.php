@@ -347,7 +347,7 @@ DADOS DE MATRÍCULA E REMATRÍCULA PARA CONSULTA:
 EOT;
         }
 
-        if (preg_match('/endere[çc]o|onde|aonde|localiza[çc][ãa]o|hor[áa]rio.*secretaria|telefone|contato/iu', $textoCompletoParaIntencao)) {
+        if (preg_match('/endere[çc]o|onde|aonde|localiza[çc][ãa]o|hor[áa]rio.*(secretaria|atendimento|fatec)|telefone|contato/iu', $textoCompletoParaIntencao)) {
             $exemplosDinamicos .= <<<EOT
 
 DADOS INSTITUCIONAIS DA FATEC ZONA SUL:
@@ -386,6 +386,7 @@ Se o aluno trouxer uma conquista (ex: novo emprego), comemore com ele.
 NUNCA invente datas de calendário; se não tiver a informação no contexto, diga que vai verificar com a coordenação.  
 Mantenha as respostas curtas e divididas em parágrafos para facilitar a leitura no chat.  
 REGRA ANTI-ALUCINAÇÃO (MUITO IMPORTANTE): Você é apenas a Mari. NUNCA simule a fala do aluno e NUNCA responda por ele. Se você fizer uma pergunta de confirmação (ex: "Está tudo certo para prosseguirmos?"), PARE DE ESCREVER IMEDIATAMENTE e aguarde a resposta real do aluno. Jamais gere o número de protocolo na mesma mensagem em que pede a confirmação.
+REGRA DE APRENDIZADO: Se o aluno perguntar algo que não está na sua base de dados, responda educadamente que não sabe e, OBRIGATORIAMENTE, coloque no final da sua resposta a tag oculta [NÃO_SEI].
 
 REGRAS DOS FLUXOS ADMINISTRATIVOS:  
 Trancamento: Avise que as matérias do semestre atual serão perdidas.  
@@ -418,7 +419,7 @@ QUANDO todas as condições forem cumpridas e você for confirmar a abertura do 
 
 IMPORTANTE: Use o número de protocolo informado acima (PRÓXIMO NÚMERO DE PROTOCOLO A GERAR). 
 
-REGRA DE CONTINGÊNCIA (MUITO IMPORTANTE): Se o aluno fizer uma pergunta administrativa cuja resposta você não saiba (ex: novas diretrizes do MEC, DPOB, processos que você desconhece), ou pedir para resolver algo que não está nos seus fluxos suportados: NÃO invente informações e **NÃO PEÇA O RA DO ALUNO**. Diga educadamente que esse caso específico foge da sua alçada digital e ofereça duas opções: oriente o aluno a verificar a informação no site oficial (https://fateczonasul.edu.br/) ou a comparecer presencialmente na secretaria.
+REGRA DE CONTINGÊNCIA (MUITO IMPORTANTE E CRÍTICA): Se o aluno perguntar sobre VESTIBULAR, ISENÇÃO DE TAXA, INSCRIÇÕES, ou fizer perguntas administrativas que não estão nos seus fluxos suportados (Trancamento, Transferência, Declaração, Calendário, Estágio, Disciplinas): **PROIBIDO PEDIR O RA DO ALUNO**. Lembre-se que candidatos ao vestibular NÃO POSSUEM RA! Diga educadamente que esse caso foge da sua alçada e oriente o usuário a verificar a informação no site oficial (https://fateczonasul.edu.br/) ou a comparecer presencialmente na secretaria nos horários informados em seus dados institucionais. E OBRIGATORIAMENTE coloque no final da sua resposta a tag oculta [NÃO_SEI].
 
 $exemplosDinamicos
 $infoHorarios
@@ -527,6 +528,29 @@ EOT;
 
             if (isset($respostaIA['choices'][0]['message']['content'])) {
                 $textoMari = $respostaIA['choices'][0]['message']['content'];
+
+                // --- SISTEMA DE LOG DE DÚVIDAS (JSON) ---
+                if (preg_match('/\[NÃO_SEI\]/i', $textoMari)) {
+                    // 1. Apaga a tag do texto para o aluno não ver
+                    $textoMari = preg_replace('/\[NÃO_SEI\]/i', '', $textoMari); 
+                    $textoMari = trim($textoMari);
+
+                    // 2. Define o caminho do arquivo JSON (na pasta api)
+                    $arquivoJson = __DIR__ . '/../duvidas_nao_respondidas.json';
+                    
+                    // 3. Lê as dúvidas antigas (se o arquivo existir)
+                    $duvidasAtual = file_exists($arquivoJson) ? json_decode(file_get_contents($arquivoJson), true) : [];
+
+                    // 4. Adiciona a nova dúvida com a data e o que o aluno digitou
+                    $duvidasAtual[] = [
+                        'data' => date('d/m/Y H:i'),
+                        'pergunta' => $mensagemAluno
+                    ];
+
+                    // 5. Salva tudo de volta no arquivo JSON
+                    file_put_contents($arquivoJson, json_encode($duvidasAtual, JSON_PRETTY_PRINT));
+                }
+                // ----------------------------------------
 
                 if (preg_match('/#\d{10,}-[A-Z0-9]{6}/', $textoMari, $matches) && $raEncontrado !== "000" && $this->pdo) {
                     $protocoloGerado = $matches[0];
