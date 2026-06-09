@@ -31,6 +31,10 @@
                         <input type="text" name="nome" required value="<?= htmlspecialchars($editData['nome'] ?? '') ?>" placeholder="Ex: Carlos Oliveira">
                     </div>
                     <div>
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 5px; display: block;">E-mail</label>
+                        <input type="email" name="email" value="<?= htmlspecialchars($editData['email'] ?? '') ?>" placeholder="Ex: aluno@email.com">
+                    </div>
+                    <div>
                         <label style="font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 5px; display: block;">Curso</label>
                         <input type="text" name="curso" required value="<?= htmlspecialchars($editData['curso'] ?? '') ?>" placeholder="Ex: DSM">
                     </div>
@@ -85,6 +89,7 @@
                 <tr>
                     <th>RA</th>
                     <th>Nome</th>
+                    <th>E-mail</th>
                     <th>Curso</th>
                     <th>Semestre</th>
                     <th>Turno</th>
@@ -97,6 +102,15 @@
                 <tr>
                     <td><strong><?= htmlspecialchars($a['ra']) ?></strong></td>
                     <td><?= htmlspecialchars($a['nome']) ?></td>
+                    <td>
+                        <?php if (!empty($a['email'])): ?>
+                            <span onclick="copiarEmail(this, '<?= htmlspecialchars($a['email']) ?>')" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: #3b82f6; background: #eff6ff; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; border: 1px solid #bfdbfe;" title="Clique para copiar e-mail">
+                                <?= htmlspecialchars($a['email']) ?> <i class="fa-regular fa-copy"></i>
+                            </span>
+                        <?php else: ?>
+                            <span style="color: #94a3b8; font-size: 0.85rem; font-style: italic;">Não informado</span>
+                        <?php endif; ?>
+                    </td>
                     <td><?= htmlspecialchars($a['curso']) ?></td>
                     <td><?= htmlspecialchars($a['semestre']) ?>º</td>
                     <td><?= htmlspecialchars($a['turno']) ?></td>
@@ -139,6 +153,45 @@ function abrirModalExclusao(raAluno) {
 }
 function fecharModalExclusao() {
     document.getElementById('modalExclusao').classList.remove('active');
+}
+
+/**
+ * Função para copiar o e-mail para a área de transferência com feedback visual nativo.
+ *
+ * @param {HTMLElement} elemento O elemento span que foi clicado.
+ * @param {string} email O endereço de e-mail a ser copiado.
+ */
+function copiarEmail(elemento, email) {
+    if (!navigator.clipboard) {
+        // Fallback caso a Clipboard API não esteja disponível
+        alert("Área de transferência não suportada pelo navegador.");
+        return;
+    }
+
+    navigator.clipboard.writeText(email).then(() => {
+        // Armazena o estado original para restaurar depois
+        const htmlOriginal = elemento.innerHTML;
+        const bgOriginal = elemento.style.background;
+        const colorOriginal = elemento.style.color;
+        const borderOriginal = elemento.style.borderColor;
+
+        // Feedback de sucesso
+        elemento.innerHTML = email + ' <i class="fa-solid fa-check"></i> Copiado!';
+        elemento.style.background = '#d1fae5';
+        elemento.style.color = '#065f46';
+        elemento.style.borderColor = '#a7f3d0';
+
+        // Restaura após 2 segundos
+        setTimeout(() => {
+            elemento.innerHTML = htmlOriginal;
+            elemento.style.background = bgOriginal;
+            elemento.style.color = colorOriginal;
+            elemento.style.borderColor = borderOriginal;
+        }, 2000);
+    }).catch(err => {
+        console.error('Erro ao copiar:', err);
+        alert("Falha ao copiar o e-mail.");
+    });
 }
 </script>
 </body>
