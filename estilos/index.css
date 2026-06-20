@@ -9,7 +9,7 @@
 body {
     background-image: 
         linear-gradient(rgba(0, 51, 102, 0.5), rgba(0, 80, 128, 0.5)),
-        url('avatar/fateczs.jpg');
+        url('../avatar/fateczs.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -166,7 +166,7 @@ body::before {
     margin-right: 15px;
     border: 2px solid white;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    background-image: url('avatar/mari.jpeg'); /* Adicione o nome do ficheiro aqui */
+    background-image: url('../avatar/mari.jpeg'); /* Adicione o nome do ficheiro aqui */
     background-size: cover;
     background-position: center;
 }
@@ -644,7 +644,7 @@ input {
 body.dark-mode {
     background-image: 
         linear-gradient(rgba(10, 10, 20, 0.85), rgba(10, 10, 20, 0.85)),
-        url('avatar/fateczs.jpg');
+        url('../avatar/fateczs.jpg');
 }
 
 body.dark-mode::before {

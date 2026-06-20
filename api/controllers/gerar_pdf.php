@@ -17,25 +17,62 @@ $login_assinatura = $_POST['login_assinatura'] ?? '';
 $senha_assinatura = $_POST['senha_assinatura'] ?? '';
 
 // 1. VALIDAÇÃO DE SEGURANÇA NO BANCO DE DADOS
-$stmtAdmin = $pdo->prepare("SELECT nome, senha, assinatura_img FROM usuarios_secretaria WHERE usuario = ?");
+$stmtAdmin = $pdo->prepare("SELECT id, nome, senha, assinatura_img FROM usuarios_secretaria WHERE usuario = ?");
 $stmtAdmin->execute([$login_assinatura]);
 $usuarioBD = $stmtAdmin->fetch();
 
-// 2. VERIFICA A SENHA COM BCRYPT
-if (!$usuarioBD || !password_verify($senha_assinatura, $usuarioBD['senha'])) {
+$autenticado_normal = false;
+$autenticado_delegado = false;
+$dados_assinatura = [];
+
+if ($usuarioBD) {
+    // 2. VERIFICA A SENHA PADRÃO COM BCRYPT
+    if (password_verify($senha_assinatura, $usuarioBD['senha'])) {
+        $autenticado_normal = true;
+        $dados_assinatura = [
+            'nome' => $usuarioBD['nome'],
+            'assinatura_img' => $usuarioBD['assinatura_img'],
+            'mensagem_delegacao' => ''
+        ];
+    } else {
+        // 3. SE A SENHA PADRÃO FALHOU, TENTA AUTENTICAR VIA DELEGAÇÃO DE ASSINATURA
+        require_once '../models/DelegacaoModel.php';
+        require_once '../use_cases/AssinarDocumentoUseCase.php';
+        
+        $delegacaoModel = new DelegacaoModel($pdo);
+        $assinarUseCase = new AssinarDocumentoUseCase($delegacaoModel);
+        
+        try {
+            $dados_delegacao = $assinarUseCase->execute($usuarioBD['id'], $senha_assinatura);
+            $autenticado_delegado = true;
+            $dados_assinatura = [
+                'nome' => $dados_delegacao['nome_origem'],
+                'assinatura_img' => $dados_delegacao['assinatura_img'],
+                'mensagem_delegacao' => "<br><span style='font-size: 0.8em; color: #666;'>(Assinado via Delegação de Poderes por: " . $usuarioBD['nome'] . ")</span>"
+            ];
+        } catch (Exception $e) {
+            // A senha não é a padrão e também não bateu com nenhum token de delegação
+            $erro_delegacao = $e->getMessage();
+        }
+    }
+}
+
+// Se não conseguiu autenticar de nenhuma das duas formas
+if (!$autenticado_normal && !$autenticado_delegado) {
     die("<div style='font-family: Arial; text-align: center; margin-top: 50px; color: #dc3545;'>
             <h1>❌ Acesso Negado</h1>
             <p>Login ou senha incorretos. O documento não foi autorizado e não foi gerado.</p>
          </div>");
 }
 
-$nome_funcionario = $usuarioBD['nome'];
-$arquivo_assinatura = $usuarioBD['assinatura_img'];
+$nome_funcionario = $dados_assinatura['nome'];
+$arquivo_assinatura = $dados_assinatura['assinatura_img'];
+$mensagem_delegacao = $dados_assinatura['mensagem_delegacao'];
 
 if (empty($arquivo_assinatura)) {
     die("<div style='font-family: Arial; text-align: center; margin-top: 50px;'>
             <h1>⚠️ Falta de Assinatura</h1>
-            <p>O usuário <b>{$nome_funcionario}</b> autenticou com sucesso, mas não possui uma foto de assinatura cadastrada no banco de dados.</p>
+            <p>A autenticação foi um sucesso, mas a conta original de <b>{$nome_funcionario}</b> não possui uma foto de assinatura cadastrada no banco de dados.</p>
          </div>");
 }
 
@@ -101,6 +138,7 @@ $htmlDoDocumento = "
             Secretaria Acadêmica<br>
             FATEC Zona Sul<br>
             <em>Documento emitido eletronicamente via Protocolo {$id_protocolo}</em>
+            {$mensagem_delegacao}
         </div>
     </div>
     
@@ -120,12 +158,40 @@ $dompdf->loadHtml($htmlDoDocumento);
 $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
 
-// Marca o protocolo como Concluído se $id_protocolo existir
-if ($id_protocolo) {
-    $stmtUpd = $pdo->prepare("UPDATE protocolos SET status = 'Concluído' WHERE id_protocolo = ?");
-    $stmtUpd->execute([$id_protocolo]);
+// 4. Salvar PDF fisicamente no servidor
+$nomeArquivo = str_replace([' ', '/', '\\'], '_', $titulo) . '_' . $ra . '_' . time() . '.pdf';
+$diretorio_alvo = __DIR__ . '/../../uploads/pdf/'; 
+
+if (!file_exists($diretorio_alvo)) {
+    mkdir($diretorio_alvo, 0777, true);
 }
 
-$nomeArquivo = str_replace([' ', '/', '\\'], '_', $titulo) . '_' . $ra . ".pdf";
+$caminho_completo_local = $diretorio_alvo . $nomeArquivo;
+
+$output = $dompdf->output();
+file_put_contents($caminho_completo_local, $output);
+
+// 5. Gravar histórico no banco
+if ($id_protocolo) {
+    try {
+        $sqlInsert = "INSERT INTO documentos_gerados (id_protocolo, nome_arquivo, caminho_local, id_usuario_gerador) 
+                      VALUES (:id_protocolo, :nome_arquivo, :caminho_local, :id_usuario)";
+        $stmtInsert = $pdo->prepare($sqlInsert);
+        $stmtInsert->execute([
+            ':id_protocolo' => $id_protocolo,
+            ':nome_arquivo' => $nomeArquivo,
+            ':caminho_local' => realpath($diretorio_alvo),
+            ':id_usuario' => $usuarioBD['id']
+        ]);
+        
+        // Marca o protocolo como Concluído
+        $stmtUpd = $pdo->prepare("UPDATE protocolos SET status = 'Concluído' WHERE id_protocolo = ?");
+        $stmtUpd->execute([$id_protocolo]);
+    } catch (PDOException $e) {
+        // Log ou ignore se a tabela não estiver criada
+    }
+}
+
+// 6. Exibir no navegador
 $dompdf->stream($nomeArquivo, array("Attachment" => false));
 ?>

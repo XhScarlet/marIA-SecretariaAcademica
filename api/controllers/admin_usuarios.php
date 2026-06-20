@@ -35,9 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
 
 // Excluir
 if (isset($_GET['del'])) {
-    $usuarioModel->excluir($_GET['del'], $_SESSION['admin_id']);
-    header("Location: admin_usuarios.php");
-    exit;
+    try {
+        $usuarioModel->excluir($_GET['del'], $_SESSION['admin_id']);
+        header("Location: admin_usuarios.php");
+        exit;
+    } catch (Exception $e) {
+        $erroCadastro = $e->getMessage();
+    }
 }
 
 // Lógica de Filtro

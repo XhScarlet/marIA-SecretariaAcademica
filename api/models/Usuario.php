@@ -29,8 +29,16 @@ class Usuario {
 
     public function excluir($id, $logged_in_id) {
         if ($id !== $logged_in_id) {
-            $stmt = $this->pdo->prepare("DELETE FROM usuarios_secretaria WHERE id=?");
-            return $stmt->execute([$id]);
+            try {
+                $stmt = $this->pdo->prepare("DELETE FROM usuarios_secretaria WHERE id=?");
+                return $stmt->execute([$id]);
+            } catch (PDOException $e) {
+                // Captura erro de Foreign Key constraint violation
+                if ($e->getCode() == '23000') {
+                    throw new Exception("Erro de Integridade: Este usuário não pode ser excluído, pois existem delegações de assinatura ou outros registros vinculados a ele.");
+                }
+                throw $e;
+            }
         }
         return false;
     }

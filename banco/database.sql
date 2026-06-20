@@ -84,3 +84,53 @@ VALUES
 ('#20260527-01', '1111111111', 'Atendimento Geral', 'RA 1111111111 solicitou transferência para turno da noite devido a estágio', NULL, 'Pendente', '2026-05-27 20:56:19'),
 ('#20260527-02', '123456789', 'Atendimento Geral', 'Mudança para o turno da noite devido ao estágio, comprovante recebido.', 'doc_6a175bf42e3bc5.89639916.pdf', 'Concluído', '2026-05-27 21:02:47');
 
+-- ==========================
+-- TABELA DELEGAÇÕES DE ASSINATURA (Senhas Temporárias)
+-- ==========================
+CREATE TABLE delegacoes_assinatura (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario_origem CHAR(36) NOT NULL, -- Quem está delegando (ex: Gabriela)
+    id_usuario_delegado CHAR(36) NOT NULL, -- Quem recebeu a permissão de assinar
+    senha_temporaria VARCHAR(255) NOT NULL, -- O hash seguro da senha temporária
+    token_criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_expiracao TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Correção do erro #1067
+    status ENUM('Ativo', 'Expirado', 'Revogado') DEFAULT 'Ativo',
+    
+    -- Chave estrangeira ligando ao usuário que delegou
+    CONSTRAINT fk_delegacao_origem
+        FOREIGN KEY (id_usuario_origem)
+        REFERENCES usuarios_secretaria(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+        
+    -- Chave estrangeira ligando ao usuário que recebeu a delegação
+    CONSTRAINT fk_delegacao_delegado
+        FOREIGN KEY (id_usuario_delegado)
+        REFERENCES usuarios_secretaria(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- ==========================
+-- TABELA HISTÓRICO DE DOCUMENTOS (Local)
+-- ==========================
+CREATE TABLE documentos_gerados (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_protocolo VARCHAR(20) NOT NULL,
+    nome_arquivo VARCHAR(255) NOT NULL, -- Ex: certificado_123456789.pdf
+    caminho_local VARCHAR(255) NOT NULL, -- Caminho no HD (ex: C:/xampp/htdocs/marIA/uploads/pdf/)
+    gerado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id_usuario_gerador CHAR(36) NOT NULL,
+    
+    CONSTRAINT fk_documento_protocolo
+        FOREIGN KEY (id_protocolo)
+        REFERENCES protocolos(id_protocolo)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+        
+    CONSTRAINT fk_documento_gerador
+        FOREIGN KEY (id_usuario_gerador)
+        REFERENCES usuarios_secretaria(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+) ENGINE=InnoDB;

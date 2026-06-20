@@ -133,8 +133,12 @@
         <p style="color: #64748b; margin-bottom: 20px;">Tem certeza que deseja excluir este aluno? Esta ação não pode ser desfeita.</p>
         
         <div style="display: flex; justify-content: center; gap: 10px;">
-            <button type="button" class="btn-action" style="background: #94a3b8 !important;" onclick="fecharModalExclusao()">Cancelar</button>
-            <a href="#" id="btnConfirmarExclusao" class="btn-del" style="padding: 10px 20px; font-size: 1rem; text-decoration: none; border-radius: 8px;">Sim, Excluir</a>
+            <form method="POST" action="admin_alunos.php" id="formExclusao" style="display: flex; gap: 10px; width: 100%; justify-content: center;">
+                <input type="hidden" name="acao" value="excluir">
+                <input type="hidden" name="ra_exclusao" id="raExclusaoInput" value="">
+                <button type="button" class="btn-action" style="background: #94a3b8 !important;" onclick="fecharModalExclusao()">Cancelar</button>
+                <button type="submit" class="btn-del" style="padding: 10px 20px; font-size: 1rem; text-decoration: none; border-radius: 8px;">Sim, Excluir</button>
+            </form>
         </div>
     </div>
 </div>
@@ -148,7 +152,7 @@ function fecharModal() {
 }
 
 function abrirModalExclusao(raAluno) {
-    document.getElementById('btnConfirmarExclusao').href = 'admin_alunos.php?del=' + encodeURIComponent(raAluno);
+    document.getElementById('raExclusaoInput').value = raAluno;
     document.getElementById('modalExclusao').classList.add('active');
 }
 function fecharModalExclusao() {
