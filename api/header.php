@@ -12,6 +12,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <a href="admin_alunos.php" style="<?= $currentPage == 'admin_alunos.php' ? 'font-weight: 600;' : 'opacity: 0.8; font-weight: 400;' ?>">Alunos</a>
             <a href="admin_usuarios.php" style="<?= $currentPage == 'admin_usuarios.php' ? 'font-weight: 600;' : 'opacity: 0.8; font-weight: 400;' ?>">Administradores</a>
             <a href="delegacao_controller.php" style="<?= $currentPage == 'delegacao_controller.php' ? 'font-weight: 600;' : 'opacity: 0.8; font-weight: 400;' ?>">Assinaturas</a>
+            <a href="historico_documentos.php" style="<?= $currentPage == 'historico_documentos.php' ? 'font-weight: 600;' : 'opacity: 0.8; font-weight: 400;' ?>">Histórico Documentos</a>
         </nav>
     </div>
     <a href="../logout.php">Sair</a>
