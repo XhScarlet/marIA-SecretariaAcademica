@@ -174,19 +174,70 @@ file_put_contents($caminho_completo_local, $output);
 // 5. Gravar histórico no banco
 if ($id_protocolo) {
     try {
-        $sqlInsert = "INSERT INTO documentos_gerados (id_protocolo, nome_arquivo, caminho_local, id_usuario_gerador) 
-                      VALUES (:id_protocolo, :nome_arquivo, :caminho_local, :id_usuario)";
+        // ==========================================
+        // TOQUE DE MESTRE: ESTRUTURAÇÃO DO LOG DO RADAR
+        // ==========================================
+        
+        // Captura o IP local de forma segura
+        $ip_origem = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        if ($ip_origem === '::1') { $ip_origem = '127.0.0.1'; } 
+
+        /**
+         * Log de Auditoria JSON (Radar)
+         */
+        $log_auditoria = [
+            "evento" => $autenticado_delegado ? "assinatura_delegada" : "assinatura_propria",
+            "documento_protocolo" => $id_protocolo,
+            "autorizador_id" => $autenticado_delegado ? $dados_delegacao['id_origem'] : $usuarioBD['id'],
+            "operador_logado_id" => $usuarioBD['id'],
+            "timestamp" => date('Y-m-d H:i:s'),
+            "ip_origem" => $ip_origem
+        ];
+
+        $json_radar = json_encode($log_auditoria, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+        // Grava o PDF e o Log de Auditoria associado à ele no repositório de histórico!
+        $sqlInsert = "INSERT INTO documentos_gerados (id_protocolo, nome_arquivo, caminho_local, id_usuario_gerador, log_radar) 
+                      VALUES (:id_protocolo, :nome_arquivo, :caminho_local, :id_usuario, :json_radar)";
         $stmtInsert = $pdo->prepare($sqlInsert);
         $stmtInsert->execute([
             ':id_protocolo' => $id_protocolo,
             ':nome_arquivo' => $nomeArquivo,
             ':caminho_local' => realpath($diretorio_alvo),
-            ':id_usuario' => $usuarioBD['id']
+            ':id_usuario' => $usuarioBD['id'],
+            ':json_radar' => $json_radar
         ]);
         
         // Marca o protocolo como Concluído
         $stmtUpd = $pdo->prepare("UPDATE protocolos SET status = 'Concluído' WHERE id_protocolo = ?");
         $stmtUpd->execute([$id_protocolo]);
+
+        /**
+         * Disparo Assíncrono de E-mail (Notificação via Mailtrap)
+         * Recupera o e-mail do aluno associado ao RA para notificação.
+         * 
+         * // FIXME: [Design] A responsabilidade de enviar e-mail não deveria estar fortemente acoplada
+         * na Controller. O ideal seria disparar um Evento (ex: DocumentoGeradoEvent) e ter um Listener
+         * assíncrono (RabbitMQ/Redis) cuidando do envio.
+         */
+        $stmtAluno = $pdo->prepare("SELECT nome, email FROM alunos WHERE ra = ?");
+        $stmtAluno->execute([$ra]);
+        $dadosAluno = $stmtAluno->fetch();
+
+        // Mitigação de erro: Apenas dispara se o aluno possuir e-mail cadastrado
+        if ($dadosAluno && !empty($dadosAluno['email'])) {
+            try {
+                require_once __DIR__ . '/../use_cases/EnviarEmailLocalUseCase.php';
+                $enviarEmail = new EnviarEmailLocalUseCase();
+                
+                $enviarEmail->executar($dadosAluno['email'], $dadosAluno['nome'], $caminho_completo_local);
+            } catch (Exception $e) {
+                // Tratamento passivo: Se o SMTP/Mailtrap cair em ambiente local, não travamos o download
+                // do documento. Logamos o incidente para análise posterior.
+                error_log("Falha não-bloqueante no envio de notificação (Mailtrap): " . $e->getMessage()); 
+            }
+        }
+
     } catch (PDOException $e) {
         // Log ou ignore se a tabela não estiver criada
     }

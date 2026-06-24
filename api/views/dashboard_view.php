@@ -17,37 +17,37 @@
         
         /* Wrapper para a seção superior (KPIs + Radar) */
         .top-section-wrapper {
-            display: flex;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
             gap: 25px;
             margin-bottom: 50px;
-            align-items: stretch;
-            flex-wrap: wrap;
+        }
+
+        @media (max-width: 1024px) {
+            .top-section-wrapper {
+                grid-template-columns: 1fr;
+            }
         }
 
         .kpis-left-column {
-            flex: 2; /* Ocupa cerca de 66% da tela */
-            display: flex;
-            flex-wrap: wrap;
-            align-content: flex-start;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
-            min-width: 320px;
+            align-content: start;
         }
 
         .radar-right-column {
-            flex: 1; /* Ocupa cerca de 33% da tela */
             display: flex;
-            min-width: 300px;
+            flex-direction: column;
         }
 
         /* Efeito Glassmorphism nos Cartões */
         .kpi-glass-card {
-            flex: 1 1 220px;
-            max-width: 280px;
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 20px;
+            border-radius: 16px;
             padding: 25px;
             display: flex;
             align-items: center;
@@ -79,7 +79,7 @@
         .kpi-icon-wrapper {
             width: 60px;
             height: 60px;
-            border-radius: 15px;
+            border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -98,8 +98,8 @@
 
         .kpi-info h3 {
             margin: 0;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
+            font-size: 0.75rem;
+            color: #6c757d;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 700;
@@ -108,9 +108,48 @@
         .kpi-info p {
             margin: 5px 0 0 0;
             font-size: 2.2rem;
-            font-weight: 800;
-            color: var(--text-primary);
+            font-weight: 700;
+            color: #212529;
             line-height: 1;
+        }
+
+        /* Input do Radar Refinado */
+        .input-busca-radar {
+            width: 100%;
+            border: 1px solid #dee2e6;
+            padding: 10px 14px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            background: #ffffff;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: #333;
+        }
+        .input-busca-radar:focus {
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+            outline: none;
+        }
+
+        /* Opção B - Card Disciplinas Unificado */
+        .kpi-disciplinas-wide {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+        }
+        .disciplinas-lista {
+            display: flex;
+            gap: 15px;
+            margin-left: auto;
+            font-size: 0.85rem;
+        }
+        .disciplinas-lista span {
+            background: rgba(128, 0, 32, 0.08);
+            color: #800020;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
         }
 
         /* Container para alinhar os gráficos lado a lado em Glassmorphism */
@@ -154,8 +193,10 @@
         }
         
         .dashboard-title-area p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+            font-size: 0.95rem;
+            opacity: 0.8;
+            letter-spacing: 0.5px;
+            font-weight: 300;
             margin: 0;
             display: flex;
             align-items: center;
@@ -224,21 +265,27 @@
                     </div>
                 </div>
 
-                <div class="kpi-glass-card">
+                <div class="kpi-glass-card kpi-disciplinas-wide">
                     <div class="kpi-icon-wrapper icon-disciplinas">
                         <i class="ph ph-books"></i>
                     </div>
                     <div class="kpi-info">
-                        <h3>Disciplinas</h3>
+                        <h3>Disciplinas Ativas</h3>
                         <p><?= $totalDisciplinas ?></p>
+                    </div>
+                    <div class="disciplinas-lista">
+                        <span>Lógica de Prog.</span>
+                        <span>Banco de Dados</span>
+                        <span>+ Engenharia de Software</span>
                     </div>
                 </div>
             </div>
 
             <!-- COLUNA DIREITA: Radar de Aprendizado -->
             <div class="radar-right-column">
-                <div class="kpi-glass-card" style="flex: 1; flex-direction: column; align-items: stretch; justify-content: flex-start; padding-bottom: 15px; width: 100%; max-width: none; height: 100%;">
-                    <div style="display: flex; align-items: center; width: 100%; margin-bottom: 15px;">
+                <div class="kpi-glass-card" style="flex: 1; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 35px; width: 100%; box-sizing: border-box;">
+
+                    <div style="display: flex; align-items: center; width: 100%; margin-bottom: 20px;">
                         <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #6f42c1, #a78bfa); color: white;">
                             <i class="ph ph-brain"></i>
                         </div>
@@ -247,7 +294,7 @@
                         </div>
                     </div>
                     
-                    <input type="text" id="buscaDuvida" placeholder="Buscar dúvida (ex: internet)..." style="width: 100%; padding: 10px 15px; border: 1px solid rgba(255,255,255,0.4); border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; background: rgba(255,255,255,0.7); outline: none; font-family: 'Inter', sans-serif; font-size: 14px; color: #333;">
+                    <input type="text" id="buscaDuvida" class="input-busca-radar" placeholder="Buscar dúvida (ex: internet)..." style="margin-bottom: 20px;">
 
                     <div id="resultadoDuvidas" style="width: 100%; flex: 1; overflow-y: auto; padding-right: 5px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px;">
                         <!-- A lista de dúvidas será gerada aqui pelo JS -->

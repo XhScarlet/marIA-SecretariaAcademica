@@ -1,9 +1,26 @@
+<?php
+/**
+ * View Pública: Validador de Documentos Acadêmicos
+ *
+ * Responsável por renderizar a interface de consulta de autenticidade documental.
+ *
+ * FIXME: Acoplamento de Caminhos (Path Coupling)
+ * Esta view pressupõe que será incluída a partir da raiz do projeto (validar.php), 
+ * o que engessa sua reutilização. Os caminhos de assets ('estilos/index.css' e 
+ * 'avatar/...') dependem do diretório do Front Controller de execução.
+ * Sugestão Arquitetural: Definir constantes de ambiente (ex: BASE_URL) para 
+ * resolução absoluta de rotas, isolando a View da infraestrutura de roteamento.
+ *
+ * @package    MarIA_Virtual_Assistant
+ * @subpackage Views
+ */
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>Validador de Documentos - FATEC ZS</title>
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="estilos/index.css">
     <style>
         body {
             background-color: #f4f7f6;

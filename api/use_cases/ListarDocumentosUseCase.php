@@ -14,7 +14,7 @@ class ListarDocumentosUseCase {
      * @return array Retorna uma matriz associativa contendo os dados dos documentos
      */
     public function executar($busca = '') {
-        $sql = "SELECT dg.id, dg.id_protocolo, dg.nome_arquivo, dg.gerado_em,
+        $sql = "SELECT dg.id, dg.id_protocolo, dg.nome_arquivo, dg.gerado_em, dg.log_radar AS detalhes,
                        a.nome AS nome_aluno, p.tipo_servico, us.nome AS quem_gerou
                 FROM documentos_gerados dg
                 JOIN protocolos p ON dg.id_protocolo = p.id_protocolo
