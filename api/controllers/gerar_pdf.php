@@ -5,6 +5,7 @@ include '../config.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use chillerlan\QRCode\{QRCode, QROptions};
 
 $id_protocolo = $_POST['id_protocolo'] ?? '';
 $titulo = $_POST['titulo_pdf'] ?? 'DOCUMENTO OFICIAL';
@@ -102,18 +103,58 @@ if ($logoBase64) {
     $logoHtml = "<img src='{$logoBase64}' width='150'>";
 }
 
+$ip_local = gethostbyname(gethostname()); 
+// O path local foi ajustado para refletir o diretório do projeto
+$url_validacao = "http://" . $ip_local . "/MarIA_v5.3/validar.php?protocolo=" . urlencode($id_protocolo);
+
+use chillerlan\QRCode\Output\QRMarkupSVG;
+use chillerlan\QRCode\Common\EccLevel;
+
+/**
+ * Configuração de Geração do QR Code.
+ * Passamos o array diretamente para o construtor do QRCode para evitar falsos positivos
+ * de tipagem em algumas extensões de IDE (ex: Intelephense) que não lidam bem com Union Types do PHP 8.
+ */
+$qrcode = new QRCode([
+    'outputInterface' => QRMarkupSVG::class,
+    'eccLevel'        => EccLevel::L,
+]);
+$qrcode_image_data = $qrcode->render($url_validacao);
+
+/**
+ * Cria um hash único da validação para o usuário ler.
+ * // TODO: Usar um campo como UUID ou chave encriptada forte (ex: Sodium) para representar a chave de autenticidade, em vez de um MD5 simples.
+ */
+$chave_autenticidade = md5($id_protocolo . $ra);
+
 $htmlDoDocumento = "
 <!DOCTYPE html>
 <html>
 <head>
     <style>
+        @page {
+            margin: 50px 50px 120px 50px; /* Define margem inferior generosa para caber o QR Code */
+        }
         body { font-family: Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; }
         .cabecalho { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #b30000; padding-bottom: 20px; }
         .titulo { text-decoration: underline; font-size: 18px; margin-bottom: 30px; text-align: center; font-weight: bold;}
         .texto { font-size: 16px; text-align: justify; margin-bottom: 60px; line-height: 2; padding: 0 30px; }
         .assinatura { text-align: center; margin-top: 80px; }
         .linha-assinatura { border-top: 1px solid #000; width: 60%; margin: 0 auto; margin-top: 5px; padding-top: 5px; }
-        .footer { position: absolute; bottom: 30px; width: 100%; text-align: center; font-size: 10px; color: #777; border-top: 1px solid #ccc; padding-top: 10px; }
+        
+        /* Estilo fixo para o rodapé em PDF */
+        .footer-validacao { 
+            position: fixed; 
+            bottom: -90px; /* Joga a div para dentro da margem inferior do @page */
+            left: 0;
+            right: 0;
+            width: 100%; 
+            border-top: 1px solid #cbd5e1; 
+            padding-top: 15px;
+        }
+        .tabela-rodape { width: 100%; border-collapse: collapse; }
+        .qr-code-img { width: 85px; height: 85px; }
+        .texto-validacao { font-size: 11px; color: #64748b; padding-left: 15px; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -142,8 +183,19 @@ $htmlDoDocumento = "
         </div>
     </div>
     
-    <div class='footer'>
-        Documento gerado automaticamente pelo sistema de Gestão - MarIA. Verificação de autenticidade disponível na secretaria da unidade.
+    <div class='footer-validacao'>
+        <table class='tabela-rodape'>
+            <tr>
+                <td style='width: 90px; vertical-align: middle;'>
+                    <img src='{$qrcode_image_data}' class='qr-code-img' />
+                </td>
+                <td class='texto-validacao'>
+                    <strong>Chave de Autenticidade Eletrônica:</strong><br>
+                    <code>{$chave_autenticidade}</code><br><br>
+                    A autenticidade deste documento pode ser verificada gratuitamente apontando a câmera do seu celular para o QR Code ao lado ou acessando o link de validação do ecossistema MarIA.
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 </html>

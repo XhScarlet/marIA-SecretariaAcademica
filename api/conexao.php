@@ -10,7 +10,15 @@
 
 // Verifica em qual domínio a aplicação está rodando.
 // $_SERVER['HTTP_HOST'] contém o header 'Host' da requisição atual.
-$isLocalhost = (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false || strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false);
+// Atualizado para contemplar acessos via IP de rede local (ex: celulares na mesma Wi-Fi escaneando o QR Code).
+$httpHost = $_SERVER['HTTP_HOST'] ?? '';
+$isLocalhost = (
+    strpos($httpHost, 'localhost') !== false || 
+    strpos($httpHost, '127.0.0.1') !== false || 
+    strpos($httpHost, '192.168.') === 0 || // Rede local padrão (Roteadores)
+    strpos($httpHost, '10.') === 0 ||      // Rede local classe A
+    preg_match('/^172\.(1[6-9]|2[0-9]|3[0-1])\./', $httpHost) // Rede local classe B
+);
 
 if ($isLocalhost) {
     // Credenciais do ambiente de Desenvolvimento (Local)

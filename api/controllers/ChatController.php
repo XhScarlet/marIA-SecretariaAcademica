@@ -552,18 +552,20 @@ EOT;
                 }
                 // ----------------------------------------
 
+                // EXTRAÇÃO E OCULTAÇÃO DA TAG DE DETALHES ANTES DA ANÁLISE DE PROTOCOLO
+                $detalhesAluno = 'Nenhum detalhe informado';
+                $textoCompletoParaAnalise = $textoMari; // Salva texto original para inferir a intenção
+
+                if (preg_match('/\[DETALHES:\s*(.*?)\]/is', $textoMari, $matchDet)) {
+                    $detalhesAluno = $matchDet[1];
+                    // Remove a tag e tudo o que houver dentro dela do texto final exibido ao aluno
+                    $textoMari = preg_replace('/\[DETALHES:\s*(.*?)\]/is', '', $textoMari);
+                    $textoMari = trim($textoMari);
+                }
+
                 if (preg_match('/#\d{10,}-[A-Z0-9]{6}/', $textoMari, $matches) && $raEncontrado !== "000" && $this->pdo) {
                     $protocoloGerado = $matches[0];
                     $tipoServico = 'Atendimento Geral';
-                    $detalhesAluno = 'Nenhum detalhe informado';
-
-                    $textoCompletoParaAnalise = $textoMari;
-
-                    if (preg_match('/\[DETALHES:\s*(.*?)\]/i', $textoMari, $matchDet)) {
-                        $detalhesAluno = $matchDet[1];
-                        $textoMari = preg_replace('/\[DETALHES:\s*(.*?)\]/i', '', $textoMari);
-                        $textoMari = trim($textoMari);
-                    }
 
                     if (stripos($textoCompletoParaAnalise, 'Trancamento') !== false) {
                         $tipoServico = 'Trancamento';
